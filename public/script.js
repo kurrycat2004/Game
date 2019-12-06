@@ -52,7 +52,7 @@ let debug = true;
 window.onbeforeunload = function(e) {
   e.preventDefault();
   e.stopPropagation();
-  e.returnValue = false;
+  e.returnValue = "sicher?";
 }
 
 function loadImg(filename) {
@@ -156,8 +156,7 @@ function setup() {
   document.addEventListener("keydown", function(e) {
     e.preventDefault()
     e.stopPropagation();
-    if (keyCode == KEYF3) {
-
+    if (e.keyCode == KEYF3) {
       debug = !debug;
     }
     setTimeout(sendUpdate);

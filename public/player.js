@@ -167,9 +167,9 @@ class player {
 
   update() {
     this.player.collide(walls.walls)
-    for (let i of this.arrows) {
+    /* for (let i of this.arrows) {
       i.update();
-    }
+    } */
     if (this.attacking && this.player.animation.getFrame() == this.player.animation.getLastFrame()) {
       this.attacking = false;
     }
@@ -195,19 +195,19 @@ class player {
       if (this.directionPressed.thrust) {
         this.thrust();
       }
-      if (this.directionPressed.run && !this.player.run) {
-        this.startRunning();
-      }
-      if (this.player.run && !this.directionPressed.run) {
-        this.stopRunning()
-      }
     }
     this.attacked = this.isAttacking();
 
     if (this.attacking) return;
-
+    
+    if (this.directionPressed.run && !this.player.run) {
+      this.startRunning();
+    }
+    else if (this.player.run && !this.directionPressed.run) {
+      this.stopRunning()
+    }
     if (this.directionPressed.up) {
-      
+
       if (!(this.player.velocity.x == 0 && this.player.velocity.y < 0)) {
         this.player.move("back");
       }

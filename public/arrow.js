@@ -26,7 +26,6 @@ class arrow {
     this.updateArrow = setInterval(this.update, 1000 / 60, this);
   }
   update(obj = this) {
-    console.log(obj)
     if (obj.arrow.life == 0) {
       if (obj.parent.arrows.indexOf(obj) != -1) obj.parent.arrows.splice(obj.parent.arrows.indexOf(obj), 1);
       if (obj.shot && obj.shot.extensions.findIndex((ele) => { return ele.obj == obj }) != -1) obj.shot.extensions.splice(obj.shot.extensions.findIndex((ele) => { return ele.obj == obj }), 1);
