@@ -19,7 +19,6 @@ class arrow {
       this.direction.y = 0;
     }
     this.arrow.setVelocity(this.direction.x, this.direction.y)
-    this.arrow.display();
     this.arrow.setCollider("rectangle", 0, 0, 32, 8)
     this.arrow.life = 300;
     this.shot;

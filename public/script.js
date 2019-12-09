@@ -9,17 +9,24 @@ let walls;
 let sprintSpeed = 3;
 let walkSpeed = 1;
 let imgFloor, imgWalls, imgArrow;
+
 let spriteSheetTypes = {};
+let animationTypes = {};
 
 let mousex = 0, mousey = 0;
 let locked = false;
+
+let lastPos = {
+  x: undefined,
+  y: undefined,
+}
 
 let Canvas;
 
 let socket;
 
 let mapWidth = 800,
-  mapHeight = 400;
+  mapHeight = 600;
 
 let KEYW = 87,
   KEYA = 65,
@@ -32,7 +39,8 @@ let KEYW = 87,
   KEYC = 67,
   SPACE = 32,
   KEYF3 = 114,
-  CTRL = 17;
+  CTRL = 17,
+  KEYB = 66;
 
 let keysBeingPressed = {
   "KEYW": false,
@@ -47,13 +55,13 @@ let keysBeingPressed = {
   "CTRL": false,
 }
 
-let debug = true;
+let debug = false;
 
-window.onbeforeunload = function(e) {
+/* window.onbeforeunload = function(e) {
   e.preventDefault();
   e.stopPropagation();
   e.returnValue = "sicher?";
-}
+} */
 
 function loadImg(filename) {
   document.getElementById("p5_loading").innerText = "Loading: " + filename;
@@ -84,7 +92,7 @@ p5.prototype.Sprite.prototype.move = function(dir) {
   }
 }
 function initAnimation(player, playerSpriteSheet, name, options, animName) {
-  let anim = loadAnimation(spriteSheetTypes[animName || name]);
+  let anim = animationTypes[animName || name];
   anim["frameDelay"] = frameDelay;
   for (let i of Object.keys(options)) {
     anim[i] = options[i];
@@ -98,6 +106,8 @@ function initAnimations(player, playerSpriteSheet, names) {
   }
 }
 function preload() {
+  console.log("Starting preload")
+  let start = millis();
   document.getElementById("p5_loading").innerText = "Initializing";
   imgFloor = loadImg("images/floor.png");
   imgWalls = loadImg("images/walls.png");
@@ -105,13 +115,15 @@ function preload() {
   for (let i of Object.keys(framePositions)) {
     document.getElementById("p5_loading").innerText = "Loading: Sprite " + i + " of " + playerSpriteSheet;
     spriteSheetTypes[i] = loadSpriteSheet(playerSpriteSheet, framePositions[i]);
+    animationTypes[i] = loadAnimation(spriteSheetTypes[i]);
   }
   document.getElementById("p5_loading").innerText = "Connecting...";
   socket = io.connect();
   socket.on("init", function(data) {
-    player1 = new player(playerSpriteSheet, 100, 100, 0, data.id);
+    player1 = new player(playerSpriteSheet, lastPos.x || 100, lastPos.y || 100, 0, data.id);
+    lastPos = { x: undefined, y: undefined, };
     players.push(player1);
-    socket.emit("update", { data: player1.getData(), id: player1.id, position: { x: player1.player.position.x, y: player1.player.position.y }, name: player1.text.elt.value });
+    setTimeout(sendUpdate);
   });
   socket.on("disconnection", function(data) {
     let playerIndex = players.findIndex((ele) => ele.id == data.id);
@@ -122,16 +134,28 @@ function preload() {
       players.splice(playerIndex, 1);
     }
   });
+  socket.on("disconnect", function(data) {
+    lastPos = { x: player1.player.position.x, y: player1.player.position.y, };
+    let playerIndex = players.findIndex((ele) => ele.id == player1.id);
+    if (playerIndex != -1) {
+      players[playerIndex].text.remove();
+      players[playerIndex].player = null;
+      players[playerIndex] = null;
+      players.splice(playerIndex, 1);
+    }
+  });
   socket.on("update", function(data) {
     if (player1) {
-      let p = players.find((ele) => ele.id == data.id) || new player(playerSpriteSheet, data.position.x, data.position.y, data.data, data.id);
+      let p = players.find((ele) => ele.id == data.id) || new player(playerSpriteSheet, data.position.x, data.position.y, data.data, data.id, data.hp);
       if (!players.includes(p)) players.push(p);
       p.updateData(data.data);
       p.updatePosition(data.position);
       p.text.elt.value = data.name;
+      //p.hp = data.hp;
     }
   });
   document.getElementById("p5_loading").innerText = "Done!";
+  console.log("Ending preload. Took " + (millis() - start) + "ms.")
 }
 
 function updateKeys(code, state) {
@@ -154,18 +178,25 @@ function setup() {
   setInterval(checkFocus, 200);
 
   document.addEventListener("keydown", function(e) {
-    e.preventDefault()
-    e.stopPropagation();
-    if (e.keyCode == KEYF3) {
+    if (!focused) return;
+    e = e || window.event;
+    if (e.keyCode == KEYB) {
+      e.returnValue = false;
+      e.preventDefault()
+      e.stopPropagation();
       debug = !debug;
+      return false;
     }
     setTimeout(sendUpdate);
     if (Object.values(player1.keys).includes(e.keyCode)) {
+      e.returnValue = false;
+      e.preventDefault()
+      e.stopPropagation();
       updateKeys(e.keyCode, true);
+      return false;
     }
-    e.returnValue = false;
-    return false;
-  });
+  }, false);
+
   document.addEventListener("keyup", function(e) {
     setTimeout(sendUpdate);
     if (Object.values(player1.keys).includes(e.keyCode)) {
@@ -182,7 +213,7 @@ function checkFocus() {
 }
 
 function draw() {
-  scale(min(windowWidth / 800, windowHeight / 400));
+  scale(min(windowWidth / mapWidth, windowHeight / mapHeight));
   background(200);
   floor1.display();
   walls.display();
@@ -204,11 +235,9 @@ function sendUpdate() {
       x: player1.player.position.x,
       y: player1.player.position.y
     },
-    name: player1.text.elt.value
+    name: player1.text.elt.value,
+    hp: player1.hp,
   })
-}
-function keyPressed() {
-  return false;
 }
 
 function mousePressed() {

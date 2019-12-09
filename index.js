@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-var server = require('http').Server(app);
+
 
 let players = [];
 
@@ -9,6 +9,8 @@ app.use(express.static('public'));
 app.get('/', function(req, res) {
   res.sendFile('/home/runner/public/index.html');
 });
+
+var server = require('http').Server(app);
 
 server.listen(function() {
   console.log(`Listening on ${server.address().port}`);

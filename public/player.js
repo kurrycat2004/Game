@@ -1,5 +1,5 @@
 class player {
-  constructor(spritesheet, x = 0, y = 0, steuerung = 0, id = undefined) {
+  constructor(spritesheet, x = 0, y = 0, steuerung = 0, id = undefined, hp = 100) {
     this.player = createSprite(x, y, 128, 128);
     this.id = id;
     initAnimations(this.player, spritesheet,
@@ -88,7 +88,7 @@ class player {
     this.extensions = [];
     this.shootArrow = false;
     this.attacked = false;
-    this.hp = 100;
+    this.hp = hp;
 
     this.text = createElement("input");
     this.text.id(this.id);
@@ -137,8 +137,8 @@ class player {
   }
 
   display() {
-    this.text.position(this.player.position.x * min(windowWidth / 800, windowHeight / 400) - document.getElementById(this.id).getBoundingClientRect().width / 2, (this.player.position.y - 48) * min(windowWidth / 800, windowHeight / 400));
-    this.text.style("font-size", (13.5 * min(windowWidth / 800, windowHeight / 400)) + "px");
+    this.text.position(this.player.position.x * min(windowWidth / mapWidth, windowHeight / mapHeight) - document.getElementById(this.id).getBoundingClientRect().width / 2, (this.player.position.y - 48) * min(windowWidth / mapWidth, windowHeight / mapHeight));
+    this.text.style("font-size", (13.5 * min(windowWidth / mapWidth, windowHeight / mapHeight)) + "px");
     for (let i of this.extensions) {
       i.obj.display();
     }
@@ -160,6 +160,7 @@ class player {
 
   isAttacking() {
     for (let i of Object.keys(this.directionPressed)) {
+      if(["up", "down", "right", "left", "run"].includes(i)) continue;
       if (this.directionPressed[i]) return true;
     }
     return false;
@@ -167,10 +168,8 @@ class player {
 
   update() {
     this.player.collide(walls.walls)
-    /* for (let i of this.arrows) {
-      i.update();
-    } */
-    if (this.attacking && this.player.animation.getFrame() == this.player.animation.getLastFrame()) {
+
+    if (this.attacking && this.player.animation.getFrame() == this.player.animation.getLastFrame() && !this.player.animation.frameChanged) {
       this.attacking = false;
     }
     if (this.shootArrow && this.player.animation.getFrame() == 8) {
@@ -244,33 +243,33 @@ class player {
   slash() {
     this.stop();
     this.player.changeAnim("slash_" + this.player.dir);
-    this.attacking = true;
+    this.attacking = "slash";
   }
   thrust() {
     this.stop();
     this.player.changeAnim("thrust_" + this.player.dir);
-    this.attacking = true;
+    this.attacking = "thrust";
   }
   spellcast() {
     this.stop();
     this.player.changeAnim("spellcast_" + this.player.dir);
-    this.attacking = true;
+    this.attacking = "spellcast";
   }
   shoot() {
     this.stop();
     this.player.changeAnim("shoot_" + this.player.dir);
-    this.attacking = true;
+    this.attacking = "shoot";
     this.shootArrow = true;
   }
   hurt() {
     this.stop();
     this.player.changeAnim("hurt");
-    this.attacking = true;
+    this.attacking = "hurt";
   }
   slash_long() {
     this.stop();
     this.player.changeAnim("oversize_" + this.player.dir);
-    this.attacking = true;
+    this.attacking = "slash_long";
   }
   startRunning() {
     this.player.run = true;
